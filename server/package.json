@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "npx prisma generate && npx tsc",
     "postinstall": "npx prisma generate",
-    "start": "npx prisma generate && node dist/server.js"
+    "start": "node dist/server.js"
   },
   "engines": {
     "node": ">=20"
