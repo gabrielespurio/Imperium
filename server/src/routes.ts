@@ -1,14 +1,28 @@
 import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
-import { PrismaNeon } from '@prisma/adapter-neon';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 
-const connectionString = process.env.DATABASE_URL!;
-const adapter = new PrismaNeon({ connectionString });
-const prisma = new PrismaClient({ adapter } as any);
+// Lazy Prisma initialization — only connects on first DB query
+let _prisma: PrismaClient | null = null;
+function db(): PrismaClient {
+  if (!_prisma) {
+    try {
+      const { PrismaNeon } = require('@prisma/adapter-neon');
+      const connectionString = process.env.DATABASE_URL;
+      if (!connectionString) throw new Error('DATABASE_URL not set');
+      const adapter = new PrismaNeon({ connectionString });
+      _prisma = new PrismaClient({ adapter } as any);
+      console.log('Prisma initialized with Neon adapter');
+    } catch (err) {
+      console.error('Neon adapter failed, using default PrismaClient:', err);
+      _prisma = new PrismaClient();
+    }
+  }
+  return _prisma;
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 // Hardcoded users — substitua por banco de dados para produção
@@ -18,6 +32,9 @@ const USERS = [
 ];
 
 export async function routes(app: FastifyInstance) {
+  // --- HEALTH CHECK ---
+  app.get('/', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+
   // --- AUTH ---
   app.post('/api/login', async (request, reply) => {
     const { email: rawEmail, password } = request.body as any;
@@ -49,67 +66,67 @@ export async function routes(app: FastifyInstance) {
 
   // --- SYNC (Mobile) ---
   app.get('/api/sync', async () => {
-    const perfumes = await prisma.perfume.findMany({ where: { ativo: true } });
-    const categorias = await prisma.categoria.findMany();
-    const banners = await prisma.banner.findMany({ where: { ativo: true } });
+    const perfumes = await db().perfume.findMany({ where: { ativo: true } });
+    const categorias = await db().categoria.findMany();
+    const banners = await db().banner.findMany({ where: { ativo: true } });
     return { perfumes, categorias, banners };
   });
 
   // --- CATEGORIAS ---
-  app.get('/api/categorias', async () => prisma.categoria.findMany());
+  app.get('/api/categorias', async () => db().categoria.findMany());
   app.post('/api/categorias', async (request) => {
     const data = request.body as any;
-    return prisma.categoria.create({ data });
+    return db().categoria.create({ data });
   });
   app.put('/api/categorias/:id', async (request) => {
     const { id } = request.params as any;
     const data = request.body as any;
-    return prisma.categoria.update({ where: { id }, data });
+    return db().categoria.update({ where: { id }, data });
   });
   app.delete('/api/categorias/:id', async (request) => {
     const { id } = request.params as any;
-    return prisma.categoria.delete({ where: { id } });
+    return db().categoria.delete({ where: { id } });
   });
 
   // --- PERFUMES ---
-  app.get('/api/perfumes', async () => prisma.perfume.findMany({ include: { categoria: true } }));
+  app.get('/api/perfumes', async () => db().perfume.findMany({ include: { categoria: true } }));
   app.post('/api/perfumes', async (request) => {
     // Remove nested relation object; keep only scalar fields
     const { categoria, ...data } = request.body as any;
-    return prisma.perfume.create({ data });
+    return db().perfume.create({ data });
   });
   app.put('/api/perfumes/:id', async (request) => {
     const { id } = request.params as any;
     const { categoria, ...data } = request.body as any;
-    return prisma.perfume.update({ where: { id }, data });
+    return db().perfume.update({ where: { id }, data });
   });
   app.delete('/api/perfumes/:id', async (request) => {
     const { id } = request.params as any;
-    return prisma.perfume.delete({ where: { id } });
+    return db().perfume.delete({ where: { id } });
   });
 
   // --- BANNERS ---
-  app.get('/api/banners', async () => prisma.banner.findMany());
+  app.get('/api/banners', async () => db().banner.findMany());
   app.post('/api/banners', async (request) => {
     const data = request.body as any;
-    return prisma.banner.create({ data });
+    return db().banner.create({ data });
   });
   app.put('/api/banners/:id', async (request) => {
     const { id } = request.params as any;
     const data = request.body as any;
-    return prisma.banner.update({ where: { id }, data });
+    return db().banner.update({ where: { id }, data });
   });
   app.delete('/api/banners/:id', async (request) => {
     const { id } = request.params as any;
-    return prisma.banner.delete({ where: { id } });
+    return db().banner.delete({ where: { id } });
   });
 
   // --- PEDIDOS ---
   app.get('/api/pedidos', async () =>
-    prisma.pedido.findMany({ orderBy: { created_at: 'desc' } })
+    db().pedido.findMany({ orderBy: { created_at: 'desc' } })
   );
   app.post('/api/pedidos', async (request) => {
     const data = request.body as any;
-    return prisma.pedido.create({ data });
+    return db().pedido.create({ data });
   });
 }
