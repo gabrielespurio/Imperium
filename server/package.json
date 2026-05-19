@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate",
-    "start": "tsx src/server.ts"
+    "build": "DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy prisma generate && tsc",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
