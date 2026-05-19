@@ -5,11 +5,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.routes = routes;
 const client_1 = require("@prisma/client");
+const adapter_neon_1 = require("@prisma/adapter-neon");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const promises_1 = require("stream/promises");
-const prisma = new client_1.PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+const adapter = new adapter_neon_1.PrismaNeon({ connectionString });
+const prisma = new client_1.PrismaClient({ adapter });
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 // Hardcoded users — substitua por banco de dados para produção
 const USERS = [

@@ -1,11 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
+import { PrismaNeon } from '@prisma/adapter-neon';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL!;
+const adapter = new PrismaNeon({ connectionString });
+const prisma = new PrismaClient({ adapter } as any);
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 // Hardcoded users — substitua por banco de dados para produção

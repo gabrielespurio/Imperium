@@ -20,6 +20,8 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/multipart": "^10.0.0",
     "@fastify/static": "^9.1.3",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
