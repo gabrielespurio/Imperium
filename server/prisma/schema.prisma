@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Perfume {
+  id          String   @id @default(uuid())
+  nome        String
+  descricao   String
+  valor       Float
+  categoria_id String
+  categoria   Categoria @relation(fields: [categoria_id], references: [id])
+  imagem      String
+  imagens     String[] @default([])
+  ativo       Boolean  @default(true)
+  created_at  DateTime @default(now())
+
+  @@map("perfumes")
+}
+
+model Categoria {
+  id      String    @id @default(uuid())
+  nome    String
+  imagem  String?
+  perfumes Perfume[]
+
+  @@map("categorias")
+}
+
+model Banner {
+  id      String  @id @default(uuid())
+  titulo  String
+  imagem  String
+  ativo   Boolean @default(true)
+
+  @@map("banners")
+}
+
+model Pedido {
+  id         String   @id @default(uuid())
+  itens      Json     
+  telefone   String?
+  created_at DateTime @default(now())
+
+  @@map("pedidos")
+}
